@@ -1,3 +1,4 @@
+from logging.handlers import DatagramHandler
 import uvicorn
 from gogoanime import *
 from fastapi import FastAPI
@@ -20,28 +21,7 @@ c = conn.cursor()
 
 #c.execute('''CREATE TABLE animes(anime_id TEXT,title TEXT,year TEXT,other_names TEXT,type TEXT,status TEXT,genre TEXT,episodes TEXT, image_url TEXT, plot_summary TEXT)''')
 # c.execute('''CREATE TABLE popular(page TEXT,title TEXT,image_url TEXT,url TEXT,released TEXT)''')
-
-
-
-animes = [
-{
-"title": "Boruto: Naruto Next Generations",
-"image_url": "https://gogocdn.net/cover/boruto-naruto-next-generations.png",
-"url": "boruto-naruto-next-generations",
-"released": "Released: 2017"
-},
-{
-"title": "Pokemon (2019)",
-"image_url": "https://gogocdn.net/cover/pokemon-2019.png",
-"url": "pokemon-2019",
-"released": "Released: 2019"
-},
-{
-"title": "Detective Conan",
-"image_url": "https://gogocdn.net/cover/detective-conan.png",
-"url": "detective-conan",
-"released": "Released: 1996"
-}]
+#c.execute('''CREATE TABLE episode(anime_id TEXT,iframe TEXT,episode_id TEXT,episode_number TEXT)''')
 
 
 
@@ -56,28 +36,6 @@ app.add_middleware(
 )
 
 
-
-@app.get('/details/{animeid}')
-async def details(animeid: str):
-    animeData = []
-    c.execute('SELECT * FROM animes WHERE anime_id=?;',(animeid,))
-    
-    data = c.fetchone()
-    animeData.append({
-        "anime_id":data[0],
-        "title":data[1],
-        "year":data[2],
-        "other_names":data[3],
-        "type":data[4],
-        "status":data[5],
-        "genre":data[6],
-        "episodes":data[7],
-        "image_url":data[8],
-        "plot_summary":data[9],
-    })
-    print(len(data))
-  
-    return animeData
 
 
 @app.get('/api/details/{animeid}')
@@ -117,6 +75,27 @@ async def latest(page: int):
     latest = GogoanimeParser.latest(page=page)
     return json.loads(latest)
 
+
+@app.get('/api/{animeid}/episode/{episode_num}')
+async def episode(animeid: str, episode_num: int):
+    episodeData = {}
+    c.execute('SELECT * FROM episode WHERE anime_id=? AND episode_number = ?;',(animeid,episode_num,))
+    data = c.fetchone()
+    if not data:
+        episode = GogoanimeParser.episode(animeid=animeid, episode_num=episode_num)
+        add_episode = "INSERT INTO episode (anime_id,iframe,episode_id,episode_number) values (?,?,?,?)"
+        c.execute(add_episode,(animeid,episode['iframe'],episode['epid'],episode_num))
+        conn.commit()
+        return episode
+    else:  
+        episodeData['anime_id'] = data[0]
+        episodeData['iframe'] = data[1]
+        episodeData['epid'] = data[2]
+        episodeData['episode_num'] = data[3]
+
+        return episodeData
+
+  
 
 @app.get('/api/popular/{page}')
 async def popular(page: int):
@@ -174,10 +153,7 @@ async def details(animeid: str):
     return schedule
 
 
-@app.get('/api/{animeid}/episode/{episode_num}')
-async def episode(animeid: str, episode_num: int):
-    episode = GogoanimeParser.episode(animeid=animeid, episode_num=episode_num)
-    return episode
+
 
 
 @app.get("/")
