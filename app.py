@@ -123,10 +123,11 @@ async def popular(page: int):
     animeData = []
     add_to_popular = "INSERT INTO popular (page,title, image_url,url,released) values (?,?,?,?,?)"
 
-    popular = GogoanimeParser.popular(page=page)
+    
     c.execute('SELECT * FROM popular WHERE page=?;',(page,))
     fetchAll = c.fetchall()
     if not fetchAll:
+        popular = GogoanimeParser.popular(page=page)
         data = json.loads(popular)
         for x in data:
             c.execute(add_to_popular,(page,x['title'],x['image_url'],x['url'],x['released']))
