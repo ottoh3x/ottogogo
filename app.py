@@ -19,6 +19,30 @@ conn = sqlite3.connect("test.db")
 c = conn.cursor()
 
 #c.execute('''CREATE TABLE animes(anime_id TEXT,title TEXT,year TEXT,other_names TEXT,type TEXT,status TEXT,genre TEXT,episodes TEXT, image_url TEXT, plot_summary TEXT)''')
+# c.execute('''CREATE TABLE popular(page TEXT,title TEXT,image_url TEXT,url TEXT,released TEXT)''')
+
+
+
+animes = [
+{
+"title": "Boruto: Naruto Next Generations",
+"image_url": "https://gogocdn.net/cover/boruto-naruto-next-generations.png",
+"url": "boruto-naruto-next-generations",
+"released": "Released: 2017"
+},
+{
+"title": "Pokemon (2019)",
+"image_url": "https://gogocdn.net/cover/pokemon-2019.png",
+"url": "pokemon-2019",
+"released": "Released: 2019"
+},
+{
+"title": "Detective Conan",
+"image_url": "https://gogocdn.net/cover/detective-conan.png",
+"url": "detective-conan",
+"released": "Released: 1996"
+}]
+
 
 
 origins = ["*"]
@@ -96,9 +120,28 @@ async def latest(page: int):
 
 @app.get('/api/popular/{page}')
 async def popular(page: int):
+    animeData = []
+    add_to_popular = "INSERT INTO popular (page,title, image_url,url,released) values (?,?,?,?,?)"
+
     popular = GogoanimeParser.popular(page=page)
-  
-    return json.loads(popular)
+    c.execute('SELECT * FROM popular WHERE page=?;',(page,))
+    fetchAll = c.fetchall()
+    if not fetchAll:
+        data = json.loads(popular)
+        for x in data:
+            c.execute(add_to_popular,(page,x['title'],x['image_url'],x['url'],x['released']))
+            conn.commit()
+        return json.loads(popular)
+
+
+
+    else:
+        for x in fetchAll:
+            animeData.append({"page":x[0],"title":x[1],"image_url":x[2],"url":x[3],"released":x[4]})
+
+
+
+        return animeData
 
 @app.get('/api/new-season/{page}')
 async def newseason(page: int):
