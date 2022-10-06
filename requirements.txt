@@ -4,4 +4,3 @@ gunicorn
 bs4
 requests
 cfscrape
-sqlite3
