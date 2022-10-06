@@ -58,7 +58,7 @@ async def details(animeid: str):
 
 @app.get('/api/details/{animeid}')
 async def details(animeid: str):
-    animeData = []
+    animeData = {}
     c.execute('SELECT * FROM animes WHERE anime_id=?;',(animeid,))
     data = c.fetchone()
     if not data:
@@ -69,18 +69,17 @@ async def details(animeid: str):
         conn.commit()
         return detail
     else:
-        animeData.append({
-        "anime_id":data[0],
-        "title":data[1],
-        "year":data[2],
-        "other_names":data[3],
-        "type":data[4],
-        "status":data[5],
-        "genre":data[6],
-        "episodes":data[7],
-        "image_url":data[8],
-        "plot_summary":data[9],
-    })
+        animeData["anime_id"]=data[0]
+        animeData["title"]=data[1]
+        animeData["year"]=data[2]
+        animeData["other_names"]=data[3]
+        animeData["type"]=data[4]
+        animeData["status"]=data[5]
+        animeData["genre"]=data[6]
+        animeData["episodes"]=data[7]
+        animeData["image_url"]=data[8]
+        animeData["plot_summary"]=data[9]
+   
         return animeData
 
 
